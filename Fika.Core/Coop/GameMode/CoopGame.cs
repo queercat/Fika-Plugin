@@ -38,6 +38,7 @@ using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
 using UnityEngine;
+using UnityEngine.UIElements;
 
 namespace Fika.Core.Coop.GameMode
 {
@@ -219,42 +220,44 @@ namespace Fika.Core.Coop.GameMode
             return humanPlayers;
         }
 
-        private float GetDistanceFromPlayers(Vector3 position, List<CoopPlayer> humanPlayers)
+        private float GetMinimumDistanceFromPlayers(Vector3 position, List<CoopPlayer> humanPlayers)
         {
-            var minDistanceFromPlayers = humanPlayers.Select(p => Vector3.SqrMagnitude(position - p.Position)).Min(); // Get the closest distance to any player. so we dont despawn bots in a players face.
+            var minimumDistance = float.PositiveInfinity;
 
-            return minDistanceFromPlayers;
+            foreach (var player in humanPlayers)
+                minimumDistance = Mathf.Min(minimumDistance, Vector3.Distance(player.Position, position));
+
+            return minimumDistance;
         }
 
         private string GetFurthestBot(Dictionary<string, Player> bots, CoopHandler coopHandler, out float furthestDistance)
         {
-            string furthestBot = string.Empty;
-            furthestDistance = 0f;
+            var humanPlayers = GetPlayers(coopHandler);
 
-            List<CoopPlayer> humanPlayers = GetPlayers(coopHandler);
+            var furthestBot = "";
+            var furthestBotDistance = 0f;
 
-            foreach (var botKeyValuePair in Bots)
+            // Get the bot with the furthest minimum distance.
+            foreach (var bot in bots)
             {
-                if (IsInvalidBotForDespawning(botKeyValuePair))
-                {
+                if (IsInvalidBotForDespawning(bot))
                     continue;
-                }
 
-                float tempDistance = GetDistanceFromPlayers(botKeyValuePair.Value.Position, humanPlayers);
+                var minimumDistanceFromBot = GetMinimumDistanceFromPlayers(bot.Value.Position, humanPlayers);
 
-                if (tempDistance > furthestDistance) // We still want the furthest bot.
-                {
-                    furthestDistance = tempDistance;
-                    furthestBot = botKeyValuePair.Key;
+                if (minimumDistanceFromBot > furthestBotDistance) {
+                    furthestBotDistance = minimumDistanceFromBot;
+                    furthestBot = bot.Key;
                 }
             }
 
+            furthestDistance = furthestBotDistance;
             return furthestBot;
         }
 
         private bool IsInvalidBotForDespawning(KeyValuePair<string, Player> kvp)
         {
-            if (kvp.Value == null || kvp.Value == null || kvp.Value.Position == null)
+            if (kvp.Value == null || kvp.Value.Position == null)
             {
 #if DEBUG
                 Logger.LogWarning("Bot is null, skipping");
@@ -264,7 +267,7 @@ namespace Fika.Core.Coop.GameMode
 
             CoopBot coopBot = (CoopBot)kvp.Value;
 
-            if (coopBot != null && coopBot.isStarted == false)
+            if (coopBot.isStarted == false)
             {
 #if DEBUG
                 Logger.LogWarning("Bot is not started, skipping");
@@ -274,11 +277,11 @@ namespace Fika.Core.Coop.GameMode
 
             WildSpawnType role = kvp.Value.Profile.Info.Settings.Role;
 
-            if ((int)role != sptUsecValue && (int)role != sptBearValue && role != EFT.WildSpawnType.assault)
-            {
-                // We skip all the bots that are not sptUsec, sptBear or assault. That means we never remove bosses, bossfollowers, and raiders
+            // We skip all the bots that are not sptUsec, sptBear or assault. That means we never remove bosses, bossfollowers, and raiders
+            var validRolesForDespawning = new List<int>() { sptUsecValue, sptBearValue, (int)EFT.WildSpawnType.assault };
+
+            if (validRolesForDespawning.Contains((int)role))
                 return true;
-            }
 
             return false;
         }
@@ -413,7 +416,7 @@ namespace Fika.Core.Coop.GameMode
                 return false;
             }
 
-            if (furthestDistance > GetDistanceFromPlayers(position, GetPlayers(coopHandler)))
+            if (furthestDistance > GetMinimumDistanceFromPlayers(position, GetPlayers(coopHandler)))
             {
 #if DEBUG
                 Logger.LogWarning($"We're not despawning anything. The furthest bot is closer than the one we wanted to spawn.");
