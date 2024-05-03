@@ -206,18 +206,16 @@ namespace Fika.Core.Coop.GameMode
 
         public Dictionary<string, Player> Bots { get; set; } = [];
 
+        private bool IsValidCoopPlayer(CoopPlayer player)
+        {
+            return (player.IsYourPlayer || player is ObservedCoopPlayer) && player.HealthController.IsAlive;
+        }
+
         private List<CoopPlayer> GetPlayers(CoopHandler coopHandler)
         {
-            List<CoopPlayer> humanPlayers = new List<CoopPlayer>();
+            // Filters for only valid players.
+            var humanPlayers = coopHandler.Players.Values.Where(p => IsValidCoopPlayer(p)).ToList();
 
-            // Grab all players
-            foreach (CoopPlayer player in coopHandler.Players.Values)
-            {
-                if ((player.IsYourPlayer || player is ObservedCoopPlayer) && player.HealthController.IsAlive)
-                {
-                    humanPlayers.Add(player);
-                }
-            }
             return humanPlayers;
         }
 
