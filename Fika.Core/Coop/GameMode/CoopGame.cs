@@ -215,7 +215,11 @@ namespace Fika.Core.Coop.GameMode
         private List<CoopPlayer> GetPlayers(CoopHandler coopHandler)
         {
             // Filters for only valid players.
-            var humanPlayers = coopHandler.Players.Values.Where(p => IsValidCoopPlayer(p)).ToList();
+            var humanPlayers = new List<CoopPlayer>();
+
+            foreach (var player in coopHandler.Players.Values)
+                if (IsValidCoopPlayer(player))
+                    humanPlayers.Add(player);
 
             return humanPlayers;
         }
