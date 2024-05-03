@@ -223,18 +223,9 @@ namespace Fika.Core.Coop.GameMode
 
         private float GetDistanceFromPlayers(Vector3 position, List<CoopPlayer> humanPlayers)
         {
-            float distance = float.PositiveInfinity;
+            var minDistanceFromPlayers = humanPlayers.Select(p => Vector3.SqrMagnitude(position - p.Position)).Min(); // Get the closest distance to any player. so we dont despawn bots in a players face.
 
-            foreach (Player player in humanPlayers)
-            {
-                float tempDistance = Vector3.SqrMagnitude(position - player.Position);
-
-                if (tempDistance < distance) // Get the closest distance to any player. so we dont despawn bots in a players face.
-                {
-                    distance = tempDistance;
-                }
-            }
-            return distance;
+            return minDistanceFromPlayers;
         }
 
         private string GetFurthestBot(Dictionary<string, Player> bots, CoopHandler coopHandler, out float furthestDistance)
