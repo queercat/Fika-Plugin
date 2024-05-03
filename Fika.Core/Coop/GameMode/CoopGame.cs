@@ -229,7 +229,7 @@ namespace Fika.Core.Coop.GameMode
             var minimumDistance = float.PositiveInfinity;
 
             foreach (var player in humanPlayers)
-                minimumDistance = Mathf.Min(minimumDistance, Vector3.Distance(player.Position, position));
+                minimumDistance = Mathf.Min(minimumDistance, Vector3.SqrMagnitude(player.Position - position));
 
             return minimumDistance;
         }
