@@ -68,27 +68,25 @@ namespace Fika.Core.Coop.Components
 
         public static CoopHandler GetCoopHandler()
         {
-            if (CoopHandler.CoopHandlerParent == null)
-                return null;
+            if (CoopHandlerParent == null) return null;
 
-            CoopHandler coopHandler = CoopHandler.CoopHandlerParent.GetComponent<CoopHandler>();
-            if (coopHandler != null)
-                return coopHandler;
+            CoopHandler coopHandler = CoopHandlerParent.GetComponent<CoopHandler>();
 
-            return null;
+            return coopHandler;
         }
 
         public static bool TryGetCoopHandler(out CoopHandler coopHandler)
         {
             coopHandler = GetCoopHandler();
+
             return coopHandler != null;
         }
 
         public static string GetServerId()
         {
             CoopHandler coopGC = GetCoopHandler();
-            if (coopGC == null)
-                return null;
+
+            if (coopGC == null) return null;
 
             return coopGC.ServerId;
         }
@@ -301,18 +299,13 @@ namespace Fika.Core.Coop.Components
             while (RunAsyncTasks)
             {
                 CoopGame coopGame = (CoopGame)Singleton<IFikaGame>.Instance;
-                int waitTime = 2500;
-                if (coopGame.Status == GameStatus.Started)
-                {
-                    waitTime = 15000;
-                }
+
+                int waitTime = coopGame.Status == GameStatus.Started ? 15_000 : 2_500;
+
                 await Task.Delay(waitTime);
 
                 if (Players == null)
-                {
                     continue;
-
-                }
 
                 ReadFromServerCharacters();
             }
