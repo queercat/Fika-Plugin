@@ -3,7 +3,6 @@ using EFT.UI.Matchmaker;
 using Fika.Core.Networking.Http;
 using Fika.Core.Networking.Http.Models;
 using System;
-using System.Linq;
 using System.Reflection;
 using UnityEngine;
 
@@ -30,8 +29,8 @@ namespace Fika.Core.Coop.Matchmaker
         public static MatchMakerGroupPreview MatchMakerGroupPreview { get; set; }
         public static int HostExpectedNumberOfPlayers { get; set; } = 1;
         public static WeatherClass[] Nodes { get; set; } = null;
-        private static string groupId;
-        private static long timestamp;
+        public static string groupId { get; set; }
+        public static long timestamp { get; set; }
         #endregion
 
         #region Static Fields
@@ -40,12 +39,11 @@ namespace Fika.Core.Coop.Matchmaker
         {
             get
             {
-                object screenController = typeof(MatchMakerAcceptScreen).GetFields(BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.FlattenHierarchy).Where(x => x.Name == "ScreenController")
-                    .FirstOrDefault().GetValue(MatchMakerAcceptScreenInstance);
-                if (screenController != null)
-                {
-                    return screenController;
-                }
+                var fields = typeof(MatchMakerAcceptScreen).GetFields(BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.FlattenHierarchy);
+
+                foreach (var field in fields)
+                    if (field.Name == "ScreenController") return field.GetValue(MatchMakerAcceptScreenInstance);
+
                 return null;
             }
         }
@@ -54,35 +52,12 @@ namespace Fika.Core.Coop.Matchmaker
         public static MatchmakerTimeHasCome.GClass3163 GClass3163 { get; internal set; }
         #endregion
 
-        public static string GetGroupId()
-        {
-            return groupId;
-        }
-
-        public static void SetGroupId(string newId)
-        {
-            groupId = newId;
-        }
-
-        public static long GetTimestamp()
-        {
-            return timestamp;
-        }
-
-        public static void SetTimestamp(long ts)
-        {
-            timestamp = ts;
-        }
-
         public static bool JoinMatch(RaidSettings settings, string profileId, string serverId, out CreateMatch result, out string errorMessage)
         {
-            result = new CreateMatch();
             errorMessage = $"No server matches the data provided or the server no longer exists";
+            result = new CreateMatch();
 
-            if (MatchMakerAcceptScreenInstance == null)
-            {
-                return false;
-            }
+            if (MatchMakerAcceptScreenInstance == null) return false;
 
             var body = new MatchJoinRequest(serverId, profileId);
             result = FikaRequestHandler.RaidJoin(body);
@@ -105,13 +80,13 @@ namespace Fika.Core.Coop.Matchmaker
 
         public static void CreateMatch(string profileId, string hostUsername, RaidSettings raidSettings)
         {
-            long timestamp = DateTimeOffset.Now.ToUnixTimeSeconds();
             var body = new CreateMatch(profileId, hostUsername, timestamp, raidSettings, HostExpectedNumberOfPlayers, raidSettings.Side, raidSettings.SelectedDateTime);
 
             FikaRequestHandler.RaidCreate(body);
 
-            SetGroupId(profileId);
-            SetTimestamp(timestamp);
+            groupId = profileId;
+            timestamp = DateTimeOffset.Now.ToUnixTimeSeconds();
+
             MatchingType = EMatchmakerType.GroupLeader;
         }
     }

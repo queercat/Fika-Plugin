@@ -145,8 +145,8 @@ namespace Fika.Core.UI.Custom
         {
             if (MatchmakerAcceptPatches.JoinMatch(RaidSettings, profileId, serverId, out CreateMatch result, out string errorMessage))
             {
-                MatchmakerAcceptPatches.SetGroupId(result.ServerId);
-                MatchmakerAcceptPatches.SetTimestamp(result.Timestamp);
+                MatchmakerAcceptPatches.groupId = result.ServerId;
+                MatchmakerAcceptPatches.timestamp = result.Timestamp;
                 MatchmakerAcceptPatches.MatchingType = EMatchmakerType.GroupPlayer;
                 MatchmakerAcceptPatches.HostExpectedNumberOfPlayers = result.ExpectedNumberOfPlayers;
 

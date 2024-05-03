@@ -32,7 +32,7 @@ namespace Fika.Core.Coop.Session
                 return true;
             }
 
-            string serverId = MatchmakerAcceptPatches.GetGroupId();
+            string serverId = MatchmakerAcceptPatches.groupId;
 
             var objectToSend = new Dictionary<string, object>
             {

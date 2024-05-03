@@ -172,9 +172,9 @@ namespace Fika.Core.Coop.GameMode
             coopHandler = CoopHandler.CoopHandlerParent.AddComponent<CoopHandler>();
             coopHandler.LocalGameInstance = this;
 
-            if (!string.IsNullOrEmpty(MatchmakerAcceptPatches.GetGroupId()))
+            if (!string.IsNullOrEmpty(MatchmakerAcceptPatches.groupId))
             {
-                coopHandler.ServerId = MatchmakerAcceptPatches.GetGroupId();
+                coopHandler.ServerId = MatchmakerAcceptPatches.groupId);
             }
             else
             {
@@ -415,10 +415,8 @@ namespace Fika.Core.Coop.GameMode
         {
             String botKey = GetFurthestBot(Bots, coopHandler, out float furthestDistance);
 
-            if (botKey == string.Empty)
-            {
+            if (String.IsNullOrEmpty(botKey))
                 return false;
-            }
 
             if (furthestDistance > GetMinimumDistanceFromPlayers(position, GetPlayers(coopHandler)))
             {
@@ -656,7 +654,7 @@ namespace Fika.Core.Coop.GameMode
 
             coopHandler.Players.Add(profile.Id, (CoopPlayer)myPlayer);
 
-            PlayerSpawnRequest body = new PlayerSpawnRequest(myPlayer.ProfileId, MatchmakerAcceptPatches.GetGroupId());
+            PlayerSpawnRequest body = new PlayerSpawnRequest(myPlayer.ProfileId, MatchmakerAcceptPatches.groupId);
             await FikaRequestHandler.UpdatePlayerSpawn(body);
 
             myPlayer.SpawnPoint = spawnPoint;
