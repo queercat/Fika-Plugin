@@ -39,8 +39,8 @@ namespace Fika.Core.Coop.Components
         ManualLogSource Logger { get; set; }
         public CoopPlayer MyPlayer => (CoopPlayer)Singleton<GameWorld>.Instance.MainPlayer;
 
-        public List<string> queuedProfileIds = [];
-        private Queue<SpawnObject> spawnQueue = new(50);
+        public List<string> QueuedProfileIds = [];
+        private Queue<SpawnObject> SpawnQueue = new(50);
 
         //private Thread loopThread;
         //private CancellationTokenSource loopToken;
@@ -318,34 +318,41 @@ namespace Fika.Core.Coop.Components
             if (Players.Count > 0)
             {
                 requestPacket.HasCharacters = true;
-                requestPacket.Characters = [.. Players.Keys, .. queuedProfileIds];
+                requestPacket.Characters = [.. Players.Keys, .. QueuedProfileIds];
             }
 
             NetDataWriter writer = Singleton<FikaClient>.Instance.DataWriter;
-            if (writer != null)
-            {
-                writer.Reset();
-                Singleton<FikaClient>.Instance?.SendData(writer, ref requestPacket, DeliveryMethod.ReliableOrdered);
-            }
+
+            if (writer == null)
+                return;
+
+            writer.Reset();
+            Singleton<FikaClient>.Instance?.SendData(writer, ref requestPacket, DeliveryMethod.ReliableOrdered);
         }
+
+        private bool CanSpawnPlayer(SpawnObject spawnObject)
+        {
+            var registeredPlayers = Singleton<GameWorld>.Instance.RegisteredPlayers;
+            var allAlivePlayers = Singleton<GameWorld>.Instance.AllAlivePlayersList;
+
+            foreach (var player in allAlivePlayers)
+                if (player.ProfileId == spawnObject.Profile.ProfileId) return false;
+
+            foreach (var player in registeredPlayers)
+                if (player.ProfileId == spawnObject.Profile.ProfileId) return false;
+
+            return true;
+        } 
 
         private async void SpawnPlayer(SpawnObject spawnObject)
         {
-            if (Singleton<GameWorld>.Instance.RegisteredPlayers.Any(x => x.ProfileId == spawnObject.Profile.ProfileId))
-            {
-                return;
-            }
-
-            if (Singleton<GameWorld>.Instance.AllAlivePlayersList.Any(x => x.ProfileId == spawnObject.Profile.ProfileId))
-            {
-                return;
-            }
+            if (!CanSpawnPlayer(spawnObject)) return;
 
             int playerId = Players.Count + Singleton<GameWorld>.Instance.RegisteredPlayers.Count + 1;
             if (spawnObject.Profile == null)
             {
                 Logger.LogError("SpawnPlayer Profile is NULL!");
-                queuedProfileIds.Remove(spawnObject.Profile.ProfileId);
+                QueuedProfileIds.Remove(spawnObject.Profile.ProfileId);
                 return;
             }
 
@@ -405,7 +412,7 @@ namespace Fika.Core.Coop.Components
                 }
             }
 
-            queuedProfileIds.Remove(spawnObject.Profile.ProfileId);
+            QueuedProfileIds.Remove(spawnObject.Profile.ProfileId);
         }
 
         private IEnumerator ProcessSpawnQueue()
@@ -416,9 +423,9 @@ namespace Fika.Core.Coop.Components
 
                 if (Singleton<AbstractGame>.Instantiated)
                 {
-                    if (spawnQueue.Count > 0)
+                    if (SpawnQueue.Count > 0)
                     {
-                        SpawnPlayer(spawnQueue.Dequeue());
+                        SpawnPlayer(SpawnQueue.Dequeue());
                     }
                     else
                     {
@@ -440,12 +447,12 @@ namespace Fika.Core.Coop.Components
             if (Singleton<GameWorld>.Instance.AllAlivePlayersList.Any(x => x.ProfileId == profile.ProfileId))
                 return;
 
-            if (queuedProfileIds.Contains(profile.ProfileId))
+            if (QueuedProfileIds.Contains(profile.ProfileId))
                 return;
 
-            queuedProfileIds.Add(profile.ProfileId);
+            QueuedProfileIds.Add(profile.ProfileId);
             Logger.LogInfo($"Queueing profile: {profile.Nickname}, {profile.ProfileId}");
-            spawnQueue.Enqueue(new SpawnObject(profile, position, isAlive, isAI));
+            SpawnQueue.Enqueue(new SpawnObject(profile, position, isAlive, isAI));
         }
 
         public WorldInteractiveObject GetInteractiveObject(string objectId, out WorldInteractiveObject worldInteractiveObject)
